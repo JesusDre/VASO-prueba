@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
-import './auth.css';
+import Navbar from './components/Navbar';
+import './styles/login.css';
 
 function Login() {
     const navigate = useNavigate();
@@ -25,7 +26,7 @@ function Login() {
         } catch (apiError) {
             const message =
                 apiError.response?.data?.detail ||
-                'No fue posible iniciar sesion. Verifica tus credenciales.';
+                'No fue posible iniciar sesión. Verifica tus credenciales.';
             setError(message);
         } finally {
             setLoading(false);
@@ -33,36 +34,82 @@ function Login() {
     };
 
     return (
-        <div className="auth-page">
-            <div className="auth-background-shape auth-shape-1" />
-            <div className="auth-background-shape auth-shape-2" />
+        <div className="login-page">
+            <Navbar />
 
-            <section className="auth-card">
-                <h1 className="auth-title">Iniciar sesion</h1>
-                <p className="auth-subtitle">Accede con tu email y contrasena para continuar.</p>
+            <div className="login-body">
+                <div className="login-card">
+                    {/* Logo */}
+                    <div className="login-logo">C</div>
 
-                <form onSubmit={handleSubmit} className="auth-form">
-                    <label htmlFor="email">Email</label>
-                    <input id="email" name="email" type="email"
-                        value={formData.email} onChange={handleChange}
-                        required placeholder="correo@ejemplo.com" />
+                    <h1 className="login-title">Bienvenido</h1>
+                    <p className="login-subtitle">Acceso para la comunidad creativa</p>
 
-                    <label htmlFor="password">Contrasena</label>
-                    <input id="password" name="password" type="password"
-                        value={formData.password} onChange={handleChange}
-                        required placeholder="********" />
+                    <form onSubmit={handleSubmit} className="login-form">
+                        <div className="login-field">
+                            <label htmlFor="email" className="login-label">
+                                Usuario <span className="login-required">*</span>
+                            </label>
+                            <div className="login-input-wrap">
+                                <span className="login-input-icon">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+                                        <circle cx="12" cy="7" r="4" />
+                                    </svg>
+                                </span>
+                                <input
+                                    id="email"
+                                    name="email"
+                                    type="email"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                    autoComplete="email"
+                                    required
+                                    placeholder="correo@ejemplo.com"
+                                />
+                            </div>
+                        </div>
 
-                    {error && <p className="auth-error">{error}</p>}
+                        <div className="login-field">
+                            <label htmlFor="password" className="login-label">
+                                Contraseña <span className="login-required">*</span>
+                            </label>
+                            <div className="login-input-wrap">
+                                <span className="login-input-icon">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                        <path d="M7 11V7a5 5 0 0110 0v4" />
+                                    </svg>
+                                </span>
+                                <input
+                                    id="password"
+                                    name="password"
+                                    type="password"
+                                    value={formData.password}
+                                    onChange={handleChange}
+                                    autoComplete="current-password"
+                                    required
+                                    placeholder="••••••••"
+                                />
+                            </div>
+                        </div>
 
-                    <button type="submit" disabled={loading}>
-                        {loading ? 'Ingresando...' : 'Entrar'}
-                    </button>
-                </form>
+                        {error && (
+                            <div className="login-error" role="alert">
+                                {error}
+                            </div>
+                        )}
 
-                <p className="auth-footer-text">
-                    No tienes cuenta? <Link to="/registro">Registrate</Link>
-                </p>
-            </section>
+                        <button type="submit" disabled={loading} className="login-btn">
+                            {loading ? 'Ingresando...' : 'Ingresar'}
+                        </button>
+                    </form>
+
+                    <p className="login-footer">
+                        ¿No tienes cuenta? <Link to="/registro">Crea una</Link>
+                    </p>
+                </div>
+            </div>
         </div>
     );
 }
