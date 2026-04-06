@@ -156,10 +156,9 @@ export default function Navbar() {
                                         <IconUser />
                                     </div>
                                 </div>
-                                <div className="nv-role-selector">
-                                    {rol === 'creador' ? 'Creador' : rol === 'admin' ? 'Administrador' : 'Lector'}
-                                    <IconChevron />
-                                </div>
+                                <span className={`nv-role-badge nv-role-${rol}`}>
+                                    {rol === 'creador' ? 'Creador' : rol === 'admin' ? 'Admin' : 'Lector'}
+                                </span>
                                 <button className="nv-btn-logout" onClick={handleLogout}>
                                     Salir
                                 </button>
@@ -169,10 +168,9 @@ export default function Navbar() {
                                 <button className="nv-btn nv-btn-primary" onClick={() => navigate('/login')}>
                                     Acceder
                                 </button>
-                                <div className="nv-role-selector" style={{ cursor: 'default' }}>
+                                <span className="nv-role-badge nv-role-visitante">
                                     Visitante
-                                    <IconChevron />
-                                </div>
+                                </span>
                             </>
                         )}
                     </div>

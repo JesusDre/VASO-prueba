@@ -217,6 +217,43 @@
   color: var(--text-muted);
 }
 
+/* Badge de rol — solo informativo, no interactivo */
+.nv-role-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    pointer-events: none;
+    user-select: none;
+}
+
+.nv-role-admin {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a;
+}
+
+.nv-role-creador {
+    background: #dbeafe;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+}
+
+.nv-role-lector {
+    background: #dcfce7;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+}
+
+.nv-role-visitante {
+    background: var(--surface-2);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+}
+
 .nv-role-selector {
   display: inline-flex;
   align-items: center;
