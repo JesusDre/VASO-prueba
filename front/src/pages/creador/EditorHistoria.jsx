@@ -272,7 +272,7 @@ function TabInfo({ historia, historiaId, usuario, onGuardado }) {
 
                     <div style={{ marginTop: 'auto', paddingTop: 8 }}>
                         <button type="submit" disabled={guardando} style={btnPrimary}>
-                            {guardando ? 'Guardando...' : historiaId ? '💾 Guardar cambios' : '💾 Guardar y Continuar'}
+                            {guardando ? 'Guardando...' : historiaId ? 'Guardar cambios' : 'Guardar y Continuar'}
                         </button>
                     </div>
                 </div>
@@ -942,7 +942,10 @@ export default function EditorHistoria() {
                                 onClick={() => { setTab('info'); }}
                                 style={{ ...btnPrimary, height: 34, padding: '0 16px', fontSize: '0.84rem' }}
                             >
-                                💾 Guardar
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}>
+                                        <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+                                    </svg>
+                                    Guardar
                             </button>
                         </div>
                     )}
