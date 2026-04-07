@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { readRoles, createRol, updateRol, deleteRol } from '../../../../../services/api';
+import { readRoles, createRol, updateRol, deleteRol } from '../../../../services/api';
 import toast from 'react-hot-toast';
 import Spinner from './Spinner';
 import Empty from './Empty';

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { readHistorias, updateHistoria } from '../../../../../services/api';
+import { readHistorias, updateHistoria } from '../../../../services/api';
 import toast from 'react-hot-toast';
 import Spinner from './Spinner';
 import Empty from './Empty';

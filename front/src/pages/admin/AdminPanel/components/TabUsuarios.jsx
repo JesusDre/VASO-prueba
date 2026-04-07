@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { readUsuarios, readRoles, deleteUsuario } from '../../../../../services/api';
+import { readUsuarios, readRoles, deleteUsuario } from '../../../../services/api';
 import toast from 'react-hot-toast';
 import Spinner from './Spinner';
 import Empty from './Empty';
