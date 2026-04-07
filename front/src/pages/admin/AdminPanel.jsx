@@ -5,7 +5,6 @@ import {
     readRoles, createRol, updateRol, deleteRol,
 } from '../../services/api';
 import Navbar from '../../components/Navbar';
-import 'bootstrap/dist/css/bootstrap.min.css';
 import toast, { Toaster } from 'react-hot-toast';
 
 // -------------------------------------------------------
@@ -13,8 +12,7 @@ import toast, { Toaster } from 'react-hot-toast';
 // -------------------------------------------------------
 function TabHistorias() {
     const [historias, setHistorias] = useState([]);
-    const [usuarios, setUsuarios] = useState([]);
-    const [filtro, setFiltro] = useState('todos'); // todos | publicadas | borradores
+    const [filtro, setFiltro] = useState('todos');
     const [cargando, setCargando] = useState(true);
 
     useEffect(() => { cargar(); }, []);
@@ -22,9 +20,8 @@ function TabHistorias() {
     const cargar = async () => {
         setCargando(true);
         try {
-            const [rh, ru] = await Promise.all([readHistorias(), readUsuarios()]);
+            const rh = await readHistorias();
             setHistorias(rh.data);
-            setUsuarios(ru.data);
         } catch { toast.error('Error al cargar historias'); }
         finally { setCargando(false); }
     };
@@ -38,79 +35,99 @@ function TabHistorias() {
         } catch { toast.error('Error al cambiar estado', { id: tid }); }
     };
 
-    const autorNombre = (id) => {
-        const u = usuarios.find((u) => u.id === id);
-        return u ? `${u.nombre} ${u.apellido_paterno}` : `ID ${id}`;
-    };
-
     const filtradas = historias.filter((h) => {
         if (filtro === 'publicadas') return h.publicada;
         if (filtro === 'borradores') return !h.publicada;
         return true;
     });
 
+    const FILTROS = [
+        { key: 'todos', label: 'Todos' },
+        { key: 'publicadas', label: 'Publicadas' },
+        { key: 'borradores', label: 'Borradores' },
+    ];
+
     return (
         <div>
             {/* Filtros */}
-            <div className="d-flex gap-2 mb-4 flex-wrap">
-                {['todos', 'publicadas', 'borradores'].map((f) => (
-                    <button key={f} onClick={() => setFiltro(f)}
-                        style={{
-                            background: filtro === f ? '#e94560' : 'rgba(255,255,255,0.06)',
-                            border: '1px solid ' + (filtro === f ? '#e94560' : 'rgba(255,255,255,0.12)'),
-                            color: 'white', borderRadius: 20, padding: '5px 18px',
-                            cursor: 'pointer', textTransform: 'capitalize', fontSize: '0.85rem',
-                        }}>
-                        {f} {filtro === f && `(${filtradas.length})`}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+                {FILTROS.map(({ key, label }) => (
+                    <button key={key} onClick={() => setFiltro(key)} style={{
+                        height: 32,
+                        padding: '0 16px',
+                        borderRadius: 20,
+                        border: `1px solid ${filtro === key ? 'var(--accent)' : 'var(--border)'}`,
+                        background: filtro === key ? 'var(--accent-light)' : 'var(--surface)',
+                        color: filtro === key ? 'var(--accent)' : 'var(--text-muted)',
+                        fontWeight: filtro === key ? 700 : 500,
+                        fontSize: '0.83rem',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                    }}>
+                        {label} {filtro === key && `(${filtradas.length})`}
                     </button>
                 ))}
             </div>
 
             {cargando ? (
-                <div className="text-center py-5"><div className="spinner-border" style={{ color: '#e94560' }} /></div>
+                <div style={{ textAlign: 'center', padding: '3rem 0' }}>
+                    <Spinner />
+                </div>
+            ) : filtradas.length === 0 ? (
+                <Empty texto="Sin historias en esta categoría." />
             ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    {filtradas.length === 0 && (
-                        <p style={{ color: 'rgba(255,255,255,0.3)', textAlign: 'center', paddingTop: 32 }}>Sin historias.</p>
-                    )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {filtradas.map((h) => (
                         <div key={h.id} style={{
-                            background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
-                            borderRadius: 10, padding: '16px 20px',
-                            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+                            background: 'var(--surface)',
+                            border: '1px solid var(--border)',
+                            borderRadius: 10,
+                            padding: '14px 18px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: 12,
+                            boxShadow: 'var(--shadow-sm)',
                         }}>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-                                    <span style={{ color: '#f0f0f0', fontWeight: 500 }}>{h.titulo}</span>
-                                    <span style={{
-                                        background: h.publicada ? 'rgba(76,175,80,0.2)' : 'rgba(158,158,158,0.2)',
-                                        color: h.publicada ? '#4caf50' : '#9e9e9e',
-                                        border: `1px solid ${h.publicada ? '#4caf5044' : '#9e9e9e44'}`,
-                                        borderRadius: 20, padding: '1px 10px', fontSize: '0.72rem',
-                                    }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 3 }}>
+                                    <span style={{ fontWeight: 600, color: 'var(--text)', fontSize: '0.93rem' }}>
+                                        {h.titulo}
+                                    </span>
+                                    <span className={`nv-badge ${h.publicada ? 'nv-badge-green' : 'nv-badge-yellow'}`}>
                                         {h.publicada ? 'Publicada' : 'Borrador'}
                                     </span>
                                 </div>
-                                <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.8rem' }}>
-                                    Autor: {autorNombre(h.id_creador)} &nbsp;·&nbsp; ID {h.id} &nbsp;·&nbsp; {new Date(h.fecha_creacion).toLocaleDateString('es-MX')}
+                                <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                    {h.nombre_creador && <span>Autor: {h.nombre_creador}</span>}
+                                    <span>·</span>
+                                    <span>ID {h.id}</span>
+                                    <span>·</span>
+                                    <span>{new Date(h.fecha_creacion).toLocaleDateString('es-MX')}</span>
                                 </div>
                                 {h.descripcion && (
                                     <p style={{
-                                        color: 'rgba(255,255,255,0.4)', fontSize: '0.82rem', margin: '6px 0 0',
-                                        overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical',
+                                        color: 'var(--text-muted)', fontSize: '0.82rem', marginTop: 4,
+                                        overflow: 'hidden', display: '-webkit-box',
+                                        WebkitLineClamp: 1, WebkitBoxOrient: 'vertical',
                                     }}>
                                         {h.descripcion}
                                     </p>
                                 )}
                             </div>
-                            <button onClick={() => togglePublicar(h)}
-                                style={{
-                                    background: h.publicada ? 'rgba(244,67,54,0.15)' : 'rgba(76,175,80,0.15)',
-                                    border: `1px solid ${h.publicada ? 'rgba(244,67,54,0.4)' : 'rgba(76,175,80,0.4)'}`,
-                                    color: h.publicada ? '#f44336' : '#4caf50',
-                                    borderRadius: 6, padding: '6px 14px', cursor: 'pointer', fontSize: '0.82rem',
-                                    whiteSpace: 'nowrap',
-                                }}>
+                            <button onClick={() => togglePublicar(h)} style={{
+                                height: 32,
+                                padding: '0 14px',
+                                borderRadius: 7,
+                                border: `1px solid ${h.publicada ? 'var(--red)' : 'var(--green)'}`,
+                                background: h.publicada ? 'var(--red-bg)' : 'var(--green-bg)',
+                                color: h.publicada ? 'var(--red)' : 'var(--green)',
+                                fontWeight: 600,
+                                fontSize: '0.82rem',
+                                cursor: 'pointer',
+                                whiteSpace: 'nowrap',
+                                transition: 'opacity 0.15s',
+                            }}>
                                 {h.publicada ? 'Despublicar' : 'Publicar'}
                             </button>
                         </div>
@@ -145,7 +162,6 @@ function TabUsuarios() {
     const toggleActivo = async (u) => {
         const tid = toast.loading(u.activo ? 'Desactivando...' : 'Activando...');
         try {
-            // PATCH solo el campo activo
             const res = await fetch(`http://localhost:8000/api/usuarios/${u.id}/`, {
                 method: 'PATCH',
                 headers: {
@@ -161,7 +177,7 @@ function TabUsuarios() {
     };
 
     const handleEliminar = async (id) => {
-        if (!window.confirm('Eliminar este usuario permanentemente?')) return;
+        if (!window.confirm('¿Eliminar este usuario permanentemente?')) return;
         const tid = toast.loading('Eliminando...');
         try {
             await deleteUsuario(id);
@@ -178,51 +194,88 @@ function TabUsuarios() {
 
     return (
         <div>
-            <input type="text" value={filtro} onChange={(e) => setFiltro(e.target.value)}
+            <input
+                type="text"
+                value={filtro}
+                onChange={(e) => setFiltro(e.target.value)}
                 placeholder="Buscar por nombre o email..."
-                style={{ width: '100%', maxWidth: 380, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, padding: '8px 14px', color: 'white', marginBottom: 20 }} />
+                className="nv-input"
+                style={{ maxWidth: 360, marginBottom: 20 }}
+            />
 
             {cargando ? (
-                <div className="text-center py-5"><div className="spinner-border" style={{ color: '#e94560' }} /></div>
+                <div style={{ textAlign: 'center', padding: '3rem 0' }}>
+                    <Spinner />
+                </div>
+            ) : filtrados.length === 0 ? (
+                <Empty texto="Sin resultados." />
             ) : (
-                <div className="table-responsive">
+                <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead>
-                            <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                                {['ID', 'Nombre', 'Email', 'Rol', 'Estado', 'Acciones'].map((h) => (
-                                    <th key={h} style={{ color: 'rgba(255,255,255,0.4)', fontWeight: 500, padding: '8px 12px', textAlign: 'left', fontSize: '0.82rem' }}>{h}</th>
+                        <thead style={{ background: 'var(--surface-2)', borderBottom: '1px solid var(--border)' }}>
+                            <tr>
+                                {['Nombre', 'Email', 'Rol', 'Estado', 'Acciones'].map((h) => (
+                                    <th key={h} style={{
+                                        padding: '10px 18px',
+                                        textAlign: 'left',
+                                        fontSize: '0.72rem',
+                                        fontWeight: 700,
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.07em',
+                                        color: 'var(--text-muted)',
+                                    }}>
+                                        {h}
+                                    </th>
                                 ))}
                             </tr>
                         </thead>
                         <tbody>
                             {filtrados.map((u) => (
-                                <tr key={u.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                    <td style={{ padding: '10px 12px', color: 'rgba(255,255,255,0.4)', fontSize: '0.82rem' }}>{u.id}</td>
-                                    <td style={{ padding: '10px 12px', color: '#f0f0f0' }}>{u.nombre} {u.apellido_paterno}</td>
-                                    <td style={{ padding: '10px 12px', color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem' }}>{u.email}</td>
-                                    <td style={{ padding: '10px 12px' }}>
-                                        <span style={{ background: 'rgba(233,69,96,0.15)', color: '#e94560', border: '1px solid rgba(233,69,96,0.3)', borderRadius: 20, padding: '2px 10px', fontSize: '0.75rem' }}>
+                                <tr key={u.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                                    <td style={{ padding: '13px 18px', fontWeight: 600, color: 'var(--text)', fontSize: '0.9rem' }}>
+                                        {u.nombre} {u.apellido_paterno}
+                                    </td>
+                                    <td style={{ padding: '13px 18px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                                        {u.email}
+                                    </td>
+                                    <td style={{ padding: '13px 18px' }}>
+                                        <span className="nv-badge nv-badge-blue">
                                             {nombreRol(u.id_rol)}
                                         </span>
                                     </td>
-                                    <td style={{ padding: '10px 12px' }}>
-                                        <span style={{
-                                            background: u.activo ? 'rgba(76,175,80,0.15)' : 'rgba(244,67,54,0.15)',
-                                            color: u.activo ? '#4caf50' : '#f44336',
-                                            border: `1px solid ${u.activo ? 'rgba(76,175,80,0.3)' : 'rgba(244,67,54,0.3)'}`,
-                                            borderRadius: 20, padding: '2px 10px', fontSize: '0.75rem',
-                                        }}>
+                                    <td style={{ padding: '13px 18px' }}>
+                                        <span className={`nv-badge ${u.activo ? 'nv-badge-green' : ''}`} style={!u.activo ? {
+                                            background: 'var(--red-bg)', color: 'var(--red)',
+                                        } : {}}>
                                             {u.activo ? 'Activo' : 'Inactivo'}
                                         </span>
                                     </td>
-                                    <td style={{ padding: '10px 12px' }}>
-                                        <div className="d-flex gap-2">
-                                            <button onClick={() => toggleActivo(u)}
-                                                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', color: 'white', borderRadius: 5, padding: '3px 10px', cursor: 'pointer', fontSize: '0.78rem' }}>
+                                    <td style={{ padding: '13px 18px' }}>
+                                        <div style={{ display: 'inline-flex', gap: 8 }}>
+                                            <button onClick={() => toggleActivo(u)} style={{
+                                                height: 30,
+                                                padding: '0 12px',
+                                                border: '1px solid var(--border)',
+                                                borderRadius: 6,
+                                                background: 'var(--surface)',
+                                                color: 'var(--text-muted)',
+                                                fontSize: '0.78rem',
+                                                fontWeight: 500,
+                                                cursor: 'pointer',
+                                            }}>
                                                 {u.activo ? 'Desactivar' : 'Activar'}
                                             </button>
-                                            <button onClick={() => handleEliminar(u.id)}
-                                                style={{ background: 'rgba(244,67,54,0.15)', border: '1px solid rgba(244,67,54,0.3)', color: '#f44336', borderRadius: 5, padding: '3px 10px', cursor: 'pointer', fontSize: '0.78rem' }}>
+                                            <button onClick={() => handleEliminar(u.id)} style={{
+                                                height: 30,
+                                                padding: '0 12px',
+                                                border: '1px solid var(--red)',
+                                                borderRadius: 6,
+                                                background: 'var(--red-bg)',
+                                                color: 'var(--red)',
+                                                fontSize: '0.78rem',
+                                                fontWeight: 500,
+                                                cursor: 'pointer',
+                                            }}>
                                                 Eliminar
                                             </button>
                                         </div>
@@ -269,58 +322,136 @@ function TabRoles() {
     };
 
     const editar = (r) => { setForm({ nombre_rol: r.nombre_rol }); setEditandoId(r.id); };
+
     const eliminar = async (id) => {
-        if (!window.confirm('Eliminar este rol?')) return;
+        if (!window.confirm('¿Eliminar este rol?')) return;
         try { await deleteRol(id); toast.success('Rol eliminado'); cargar(); }
         catch { toast.error('Error al eliminar'); }
     };
 
     return (
-        <div className="row g-4">
-            <div className="col-md-4">
-                <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, border: '1px solid rgba(255,255,255,0.08)', padding: 20 }}>
-                    <h6 style={{ color: '#e94560', marginBottom: 16 }}>{editandoId ? 'Editar rol' : 'Nuevo rol'}</h6>
-                    <form onSubmit={handleGuardar}>
-                        <div className="mb-3">
-                            <input type="text" value={form.nombre_rol} onChange={(e) => setForm({ nombre_rol: e.target.value })}
-                                required disabled={guardando} placeholder="Ej: administrador, lector, creador"
-                                style={{ width: '100%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, padding: '8px 12px', color: 'white' }} />
-                        </div>
-                        <div className="d-flex gap-2">
-                            <button type="submit" disabled={guardando}
-                                style={{ flex: 1, background: '#e94560', border: 'none', color: 'white', padding: '8px', borderRadius: 6, cursor: 'pointer' }}>
-                                {guardando ? '...' : editandoId ? 'Actualizar' : 'Crear'}
+        <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+            {/* Formulario */}
+            <div style={{ width: 280, flexShrink: 0, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20, boxShadow: 'var(--shadow-sm)' }}>
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: 16, color: 'var(--text)' }}>
+                    {editandoId ? 'Editar rol' : 'Nuevo rol'}
+                </h3>
+                <form onSubmit={handleGuardar} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div>
+                        <label className="nv-label">Nombre del rol</label>
+                        <input
+                            type="text"
+                            value={form.nombre_rol}
+                            onChange={(e) => setForm({ nombre_rol: e.target.value })}
+                            required
+                            disabled={guardando}
+                            placeholder="Ej: administrador, lector"
+                            className="nv-input"
+                        />
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                        <button type="submit" disabled={guardando} style={{
+                            flex: 1,
+                            height: 36,
+                            background: 'var(--accent)',
+                            border: 'none',
+                            color: '#fff',
+                            borderRadius: 8,
+                            fontWeight: 600,
+                            fontSize: '0.88rem',
+                            cursor: 'pointer',
+                        }}>
+                            {guardando ? '...' : editandoId ? 'Actualizar' : 'Crear'}
+                        </button>
+                        {editandoId && (
+                            <button type="button" onClick={() => { setForm(FORM); setEditandoId(null); }} style={{
+                                height: 36,
+                                padding: '0 14px',
+                                background: 'var(--surface-2)',
+                                border: '1px solid var(--border)',
+                                color: 'var(--text-muted)',
+                                borderRadius: 8,
+                                cursor: 'pointer',
+                                fontSize: '0.88rem',
+                            }}>
+                                Cancelar
                             </button>
-                            {editandoId && (
-                                <button type="button" onClick={() => { setForm(FORM); setEditandoId(null); }}
-                                    style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', padding: '8px 14px', borderRadius: 6, cursor: 'pointer' }}>
-                                    Cancelar
-                                </button>
-                            )}
-                        </div>
-                    </form>
-                </div>
+                        )}
+                    </div>
+                </form>
             </div>
-            <div className="col-md-8">
+
+            {/* Lista de roles */}
+            <div style={{ flex: 1, minWidth: 240 }}>
                 {cargando ? (
-                    <div className="text-center py-4"><div className="spinner-border" style={{ color: '#e94560' }} /></div>
+                    <div style={{ textAlign: 'center', padding: '2rem 0' }}><Spinner /></div>
+                ) : roles.length === 0 ? (
+                    <Empty texto="Sin roles configurados." />
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {roles.map((r) => (
-                            <div key={r.id} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div key={r.id} style={{
+                                background: 'var(--surface)',
+                                border: '1px solid var(--border)',
+                                borderRadius: 10,
+                                padding: '13px 16px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                boxShadow: 'var(--shadow-sm)',
+                            }}>
                                 <div>
-                                    <span style={{ color: '#f0f0f0', fontWeight: 500 }}>{r.nombre_rol}</span>
-                                    <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.8rem', marginLeft: 10 }}>ID {r.id}</span>
+                                    <span style={{ fontWeight: 600, color: 'var(--text)', fontSize: '0.92rem' }}>{r.nombre_rol}</span>
+                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginLeft: 10 }}>ID {r.id}</span>
                                 </div>
-                                <div className="d-flex gap-2">
-                                    <button onClick={() => editar(r)} style={{ background: 'rgba(255,193,7,0.15)', border: '1px solid rgba(255,193,7,0.3)', color: '#ffc107', borderRadius: 5, padding: '4px 10px', cursor: 'pointer', fontSize: '0.8rem' }}>Editar</button>
-                                    <button onClick={() => eliminar(r.id)} style={{ background: 'rgba(244,67,54,0.15)', border: '1px solid rgba(244,67,54,0.3)', color: '#f44336', borderRadius: 5, padding: '4px 10px', cursor: 'pointer', fontSize: '0.8rem' }}>Eliminar</button>
+                                <div style={{ display: 'flex', gap: 8 }}>
+                                    <button onClick={() => editar(r)} style={{
+                                        height: 30, padding: '0 12px',
+                                        border: '1px solid var(--border)',
+                                        borderRadius: 6, background: 'var(--yellow-bg)',
+                                        color: 'var(--yellow)', fontSize: '0.8rem',
+                                        fontWeight: 600, cursor: 'pointer',
+                                    }}>
+                                        Editar
+                                    </button>
+                                    <button onClick={() => eliminar(r.id)} style={{
+                                        height: 30, padding: '0 12px',
+                                        border: '1px solid var(--red)',
+                                        borderRadius: 6, background: 'var(--red-bg)',
+                                        color: 'var(--red)', fontSize: '0.8rem',
+                                        fontWeight: 600, cursor: 'pointer',
+                                    }}>
+                                        Eliminar
+                                    </button>
                                 </div>
                             </div>
                         ))}
                     </div>
                 )}
             </div>
+        </div>
+    );
+}
+
+// -------------------------------------------------------
+// Helpers de UI
+// -------------------------------------------------------
+function Spinner() {
+    return (
+        <div style={{
+            width: 28, height: 28, margin: '0 auto',
+            border: '3px solid var(--border)',
+            borderTopColor: 'var(--accent)',
+            borderRadius: '50%',
+            animation: 'spin 0.7s linear infinite',
+        }} />
+    );
+}
+
+function Empty({ texto }) {
+    return (
+        <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+            {texto}
         </div>
     );
 }
@@ -338,27 +469,36 @@ export default function AdminPanel() {
     ];
 
     return (
-        <div style={{ minHeight: '100vh', backgroundColor: '#0d0d1a', color: 'white' }}>
+        <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
             <Toaster position="top-right" />
             <Navbar />
 
-            <div className="container py-5">
-                <div className="mb-5">
-                    <h2 className="fw-bold mb-1">Panel de Administracion</h2>
-                    <p style={{ color: 'rgba(255,255,255,0.4)' }}>Gestiona historias, usuarios y roles del sistema</p>
+            <div style={{ maxWidth: 1100, margin: '0 auto', padding: '2.5rem 1.5rem' }}>
+                {/* Encabezado */}
+                <div style={{ marginBottom: '2rem' }}>
+                    <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text)' }}>
+                        Panel de Administración
+                    </h2>
+                    <p style={{ marginTop: 4, color: 'var(--text-muted)', fontSize: '0.88rem' }}>
+                        Gestiona historias, usuarios y roles del sistema
+                    </p>
                 </div>
 
                 {/* Tabs */}
-                <div style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: 32, display: 'flex', gap: 4 }}>
+                <div style={{ borderBottom: '1px solid var(--border)', marginBottom: 28, display: 'flex', gap: 4 }}>
                     {tabs.map((t) => (
-                        <button key={t.key} onClick={() => setTab(t.key)}
-                            style={{
-                                background: 'none', border: 'none', padding: '10px 24px', cursor: 'pointer',
-                                color: tab === t.key ? '#e94560' : 'rgba(255,255,255,0.5)',
-                                borderBottom: tab === t.key ? '2px solid #e94560' : '2px solid transparent',
-                                fontWeight: tab === t.key ? 'bold' : 'normal',
-                                fontSize: '0.95rem', transition: 'color .2s',
-                            }}>
+                        <button key={t.key} onClick={() => setTab(t.key)} style={{
+                            background: 'none',
+                            border: 'none',
+                            borderBottom: tab === t.key ? '2px solid var(--accent)' : '2px solid transparent',
+                            padding: '10px 20px',
+                            marginBottom: -1,
+                            cursor: 'pointer',
+                            color: tab === t.key ? 'var(--accent)' : 'var(--text-muted)',
+                            fontWeight: tab === t.key ? 700 : 500,
+                            fontSize: '0.92rem',
+                            transition: 'color 0.15s',
+                        }}>
                             {t.label}
                         </button>
                     ))}
@@ -368,6 +508,8 @@ export default function AdminPanel() {
                 {tab === 'usuarios' && <TabUsuarios />}
                 {tab === 'roles' && <TabRoles />}
             </div>
+
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
     );
 }

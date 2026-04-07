@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     readHistoria, createHistoria, updateHistoria,
     readNodos, createNodo, updateNodo, deleteNodo,
     readOpciones, createOpcion, updateOpcion, deleteOpcion,
-    readImagenes, createImagen, deleteImagen,
-    readAudios, createAudio, deleteAudio,
+    readImagenes, createImagen, updateImagen, deleteImagen,
+    readAudios, createAudio, updateAudio, deleteAudio,
     readPersonajes, createPersonaje, updatePersonaje, deletePersonaje,
     readNodoPersonajes, createNodoPersonaje, deleteNodoPersonaje,
 } from '../../services/api';
@@ -84,6 +84,8 @@ function TabInfo({ historia, historiaId, usuario, onGuardado }) {
     const [portadas, setPortadas] = useState([]);
     const [guardando, setGuardando] = useState(false);
     const [errores, setErrores] = useState({});
+    const [subiendoPortada, setSubiendoPortada] = useState(false);
+    const fileInputRef = useRef(null);
 
     useEffect(() => {
         if (historiaId) {
@@ -99,6 +101,28 @@ function TabInfo({ historia, historiaId, usuario, onGuardado }) {
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
         setForm({ ...form, [name]: type === 'checkbox' ? checked : value });
+    };
+
+    const handlePortadaChange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setSubiendoPortada(true);
+        const fd = new FormData();
+        fd.append('imagen_para_binario', file);
+        fd.append('tipo', 'portada');
+        fd.append('descripcion', file.name);
+        try {
+            const res = await createImagen(fd);
+            const nuevaPortada = res.data;
+            setPortadas((prev) => [...prev, nuevaPortada]);
+            setForm((prev) => ({ ...prev, id_portada: nuevaPortada.id }));
+            toast.success('Portada subida');
+        } catch {
+            toast.error('Error al subir portada');
+        } finally {
+            setSubiendoPortada(false);
+            e.target.value = '';
+        }
     };
 
     const handleGuardar = async (e) => {
@@ -131,6 +155,7 @@ function TabInfo({ historia, historiaId, usuario, onGuardado }) {
     };
 
     // Preview de portada
+    const [imgError, setImgError] = useState(false);
     const portadaSeleccionada = portadas.find((p) => p.id === Number(form.id_portada));
     const portadaSrc = portadaSeleccionada
         ? (portadaSeleccionada.imagen_base64_display
@@ -140,52 +165,128 @@ function TabInfo({ historia, historiaId, usuario, onGuardado }) {
                 : null)
         : null;
 
+    // Resetear error cuando cambia la portada seleccionada
+    useEffect(() => { setImgError(false); }, [form.id_portada]);
+
     return (
         <form onSubmit={handleGuardar}>
             <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
                 {/* Columna izquierda: portada */}
                 <div style={{ width: 240, flexShrink: 0 }}>
                     <p style={labelStyle}>Imagen de Portada</p>
-                    <div style={{
-                        border: '2px dashed var(--border)',
-                        borderRadius: 10,
-                        height: 260,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        background: portadaSrc ? 'transparent' : 'var(--surface-2)',
-                        backgroundImage: portadaSrc ? `url(${portadaSrc})` : 'none',
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                        cursor: 'pointer',
-                        gap: 8,
-                        color: 'var(--text-muted)',
-                    }}>
-                        {!portadaSrc && (
-                            <>
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-                                    <polyline points="17 8 12 3 7 8" />
-                                    <line x1="12" y1="3" x2="12" y2="15" />
-                                </svg>
-                                <span style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                                    Haz clic para subir portada
+                    {/* Input de archivo oculto */}
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={handlePortadaChange}
+                    />
+
+                    <div
+                        onClick={() => fileInputRef.current?.click()}
+                        style={{
+                            border: '2px dashed var(--border)',
+                            borderRadius: 10,
+                            overflow: 'hidden',
+                            position: 'relative',
+                            cursor: 'pointer',
+                            background: 'var(--surface-2)',
+                            // Altura fija solo cuando no hay imagen
+                            ...(portadaSrc && !imgError
+                                ? {}
+                                : { height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }
+                            ),
+                        }}
+                    >
+                        {/* Imagen completa sin recorte vertical */}
+                        {portadaSrc && !imgError && (
+                            <img
+                                src={portadaSrc}
+                                alt="Portada"
+                                onError={() => setImgError(true)}
+                                style={{
+                                    display: 'block',
+                                    width: '100%',
+                                    height: 'auto',
+                                }}
+                            />
+                        )}
+
+                        {/* Spinner mientras sube */}
+                        {subiendoPortada && (
+                            <div style={{
+                                position: 'absolute', inset: 0, zIndex: 2,
+                                background: 'rgba(255,255,255,0.7)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                                <div style={{
+                                    width: 28, height: 28,
+                                    border: '3px solid var(--border)',
+                                    borderTopColor: 'var(--accent)',
+                                    borderRadius: '50%',
+                                    animation: 'spin 0.7s linear infinite',
+                                }} />
+                            </div>
+                        )}
+
+                        {/* Placeholder cuando no hay imagen o falló la carga */}
+                        {(!portadaSrc || imgError) && !subiendoPortada && (
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, color: 'var(--text-muted)' }}>
+                                {imgError ? (
+                                    <>
+                                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <circle cx="12" cy="12" r="10" />
+                                            <line x1="12" y1="8" x2="12" y2="12" />
+                                            <line x1="12" y1="16" x2="12.01" y2="16" />
+                                        </svg>
+                                        <span style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--red)' }}>
+                                            No se pudo cargar
+                                        </span>
+                                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                                            Haz clic para subir otra
+                                        </span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                                            <polyline points="17 8 12 3 7 8" />
+                                            <line x1="12" y1="3" x2="12" y2="15" />
+                                        </svg>
+                                        <span style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                                            Haz clic para subir portada
+                                        </span>
+                                    </>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Overlay hover para cambiar imagen */}
+                        {portadaSrc && !imgError && !subiendoPortada && (
+                            <div style={{
+                                position: 'absolute', inset: 0, zIndex: 1,
+                                background: 'rgba(0,0,0,0.4)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                opacity: 0, transition: 'opacity 0.15s',
+                            }}
+                                onMouseEnter={(e) => e.currentTarget.style.opacity = 1}
+                                onMouseLeave={(e) => e.currentTarget.style.opacity = 0}
+                            >
+                                <span style={{ color: '#fff', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                                    Cambiar imagen
                                 </span>
-                            </>
+                            </div>
                         )}
                     </div>
                     <div style={{ marginTop: 10 }}>
-                        <label style={labelStyle}>Seleccionar portada</label>
+                        <label style={labelStyle}>O seleccionar existente</label>
                         <select name="id_portada" value={form.id_portada} onChange={handleChange} disabled={guardando} style={selectStyle}>
                             <option value="">-- Sin portada --</option>
                             {portadas.map((p) => (
                                 <option key={p.id} value={p.id}>{p.descripcion || `Portada ${p.id}`}</option>
                             ))}
                         </select>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 4 }}>
-                            Sube la portada primero en "Recursos".
-                        </p>
                     </div>
                 </div>
 
@@ -282,6 +383,55 @@ function TabInfo({ historia, historiaId, usuario, onGuardado }) {
 }
 
 // -------------------------------------------------------
+// Modal reutilizable
+// -------------------------------------------------------
+function Modal({ titulo, children, onClose, ancho = 440 }) {
+    useEffect(() => {
+        const handler = (e) => { if (e.key === 'Escape') onClose(); };
+        document.addEventListener('keydown', handler);
+        return () => document.removeEventListener('keydown', handler);
+    }, [onClose]);
+
+    return (
+        <div
+            onClick={onClose}
+            style={{
+                position: 'fixed', inset: 0, zIndex: 1000,
+                background: 'rgba(15,23,42,0.45)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                padding: '1rem',
+            }}
+        >
+            <div
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 14,
+                    boxShadow: 'var(--shadow-lg)',
+                    width: '100%',
+                    maxWidth: ancho,
+                    padding: '24px 28px',
+                }}
+            >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text)' }}>{titulo}</h3>
+                    <button onClick={onClose} style={{
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        color: 'var(--text-muted)', padding: 4, lineHeight: 1,
+                    }}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                    </button>
+                </div>
+                {children}
+            </div>
+        </div>
+    );
+}
+
+// -------------------------------------------------------
 // Tab 2: Recursos (imágenes y audios)
 // -------------------------------------------------------
 function TabRecursos() {
@@ -295,6 +445,15 @@ function TabRecursos() {
     const [audDesc, setAudDesc] = useState('');
     const [seccion, setSeccion] = useState('imagenes');
 
+    // Modal de confirmación de borrado
+    const [modalEliminar, setModalEliminar] = useState(null); // { id, nombre, tipo: 'imagen'|'audio' }
+    const [eliminando, setEliminando] = useState(false);
+
+    // Modal de edición
+    const [modalEditar, setModalEditar] = useState(null); // { item, tipo: 'imagen'|'audio' }
+    const [editForm, setEditForm] = useState({});
+    const [guardandoEdit, setGuardandoEdit] = useState(false);
+
     const cargar = async () => {
         const [ri, ra] = await Promise.all([readImagenes(), readAudios()]);
         setImagenes(ri.data);
@@ -303,6 +462,7 @@ function TabRecursos() {
 
     useEffect(() => { cargar(); }, []);
 
+    // ---- Subir ----
     const subirImagen = async (e) => {
         e.preventDefault();
         if (!imgFile) { toast.error('Selecciona un archivo'); return; }
@@ -314,8 +474,7 @@ function TabRecursos() {
         try {
             await createImagen(fd);
             toast.success('Imagen subida');
-            setImgFile(null);
-            setImgDesc('');
+            setImgFile(null); setImgDesc('');
             e.target.reset();
             cargar();
         } catch { toast.error('Error al subir imagen'); }
@@ -332,26 +491,48 @@ function TabRecursos() {
         try {
             await createAudio(fd);
             toast.success('Audio subido');
-            setAudFile(null);
-            setAudDesc('');
+            setAudFile(null); setAudDesc('');
             e.target.reset();
             cargar();
         } catch { toast.error('Error al subir audio'); }
         finally { setSubiendo(false); }
     };
 
-    const eliminarImagen = async (id) => {
-        if (!window.confirm('¿Eliminar imagen?')) return;
-        await deleteImagen(id);
-        toast.success('Imagen eliminada');
-        cargar();
+    // ---- Eliminar ----
+    const abrirEliminar = (id, nombre, tipo) => setModalEliminar({ id, nombre, tipo });
+
+    const confirmarEliminar = async () => {
+        setEliminando(true);
+        try {
+            if (modalEliminar.tipo === 'imagen') await deleteImagen(modalEliminar.id);
+            else await deleteAudio(modalEliminar.id);
+            toast.success(`${modalEliminar.tipo === 'imagen' ? 'Imagen' : 'Audio'} eliminado`);
+            setModalEliminar(null);
+            cargar();
+        } catch { toast.error('Error al eliminar'); }
+        finally { setEliminando(false); }
     };
 
-    const eliminarAudio = async (id) => {
-        if (!window.confirm('¿Eliminar audio?')) return;
-        await deleteAudio(id);
-        toast.success('Audio eliminado');
-        cargar();
+    // ---- Editar ----
+    const abrirEditar = (item, tipo) => {
+        setModalEditar({ item, tipo });
+        setEditForm(tipo === 'imagen'
+            ? { descripcion: item.descripcion || '', tipo: item.tipo }
+            : { descripcion: item.descripcion || '' }
+        );
+    };
+
+    const confirmarEditar = async (e) => {
+        e.preventDefault();
+        setGuardandoEdit(true);
+        try {
+            if (modalEditar.tipo === 'imagen') await updateImagen(modalEditar.item.id, editForm);
+            else await updateAudio(modalEditar.item.id, editForm);
+            toast.success('Recurso actualizado');
+            setModalEditar(null);
+            cargar();
+        } catch { toast.error('Error al guardar'); }
+        finally { setGuardandoEdit(false); }
     };
 
     const tipoLabel = { escenario: 'Fondo', personaje: 'Personaje', portada: 'Portada' };
@@ -360,6 +541,7 @@ function TabRecursos() {
 
     return (
         <div>
+            {/* Selector de sección */}
             <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
                 {['imagenes', 'audios'].map((s) => (
                     <button key={s} onClick={() => setSeccion(s)} style={{
@@ -373,6 +555,7 @@ function TabRecursos() {
                 ))}
             </div>
 
+            {/* ---- IMÁGENES ---- */}
             {seccion === 'imagenes' && (
                 <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 20 }}>
                     <div style={cardStyle}>
@@ -404,32 +587,42 @@ function TabRecursos() {
                         {imagenes.length === 0 && (
                             <p style={{ color: 'var(--text-muted)', textAlign: 'center', paddingTop: 40, fontSize: '0.9rem' }}>Sin imágenes. Sube la primera.</p>
                         )}
-                        {imagenes.map((img) => (
-                            <div key={img.id} style={{ ...cardStyle, display: 'flex', alignItems: 'center', gap: 14 }}>
-                                <div style={{ width: 60, height: 60, borderRadius: 7, overflow: 'hidden', flexShrink: 0, background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
-                                    {img.imagen_base64_display ? (
-                                        <img src={`data:image/png;base64,${img.imagen_base64_display}`} alt={img.descripcion} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                    ) : img.url ? (
-                                        <img src={`http://localhost:8000${img.url}`} alt={img.descripcion} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                    ) : (
-                                        <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', color: 'var(--text-muted)', fontSize: '0.65rem' }}>IMG</div>
-                                    )}
+                        {imagenes.map((img) => {
+                            const src = img.imagen_base64_display
+                                ? `data:image/png;base64,${img.imagen_base64_display}`
+                                : img.url ? `http://localhost:8000${img.url}` : null;
+                            return (
+                                <div key={img.id} style={{ ...cardStyle, display: 'flex', alignItems: 'center', gap: 14 }}>
+                                    <div style={{ width: 60, height: 60, borderRadius: 7, overflow: 'hidden', flexShrink: 0, background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+                                        {src
+                                            ? <img src={src} alt={img.descripcion} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            : <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', color: 'var(--text-muted)', fontSize: '0.65rem' }}>IMG</div>
+                                        }
+                                    </div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ fontWeight: 600, color: 'var(--text)', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            {img.descripcion || `Imagen ${img.id}`}
+                                        </div>
+                                        <span style={{ background: tipoBadgeBg[img.tipo] || '#f1f5f9', color: tipoBadgeColor[img.tipo] || 'var(--text-muted)', fontSize: '0.7rem', padding: '2px 8px', borderRadius: 20, fontWeight: 700 }}>
+                                            {tipoLabel[img.tipo] || img.tipo}
+                                        </span>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                                        <button onClick={() => abrirEditar(img, 'imagen')} style={{ height: 32, padding: '0 12px', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--surface)', color: 'var(--accent)', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}>
+                                            Editar
+                                        </button>
+                                        <button onClick={() => abrirEliminar(img.id, img.descripcion || `Imagen ${img.id}`, 'imagen')} style={{ height: 32, padding: '0 12px', border: '1px solid var(--red)', borderRadius: 6, background: 'var(--red-bg)', color: 'var(--red)', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}>
+                                            Eliminar
+                                        </button>
+                                    </div>
                                 </div>
-                                <div style={{ flex: 1 }}>
-                                    <div style={{ fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>{img.descripcion || `Imagen ${img.id}`}</div>
-                                    <span style={{ background: tipoBadgeBg[img.tipo] || '#f1f5f9', color: tipoBadgeColor[img.tipo] || 'var(--text-muted)', fontSize: '0.7rem', padding: '2px 8px', borderRadius: 20, fontWeight: 700 }}>
-                                        {tipoLabel[img.tipo] || img.tipo}
-                                    </span>
-                                </div>
-                                <button onClick={() => eliminarImagen(img.id)} style={{ background: 'var(--red-bg)', border: 'none', color: 'var(--red)', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}>
-                                    Eliminar
-                                </button>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
             )}
 
+            {/* ---- AUDIOS ---- */}
             {seccion === 'audios' && (
                 <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 20 }}>
                     <div style={cardStyle}>
@@ -455,21 +648,95 @@ function TabRecursos() {
                         )}
                         {audios.map((a) => (
                             <div key={a.id} style={{ ...cardStyle, display: 'flex', alignItems: 'center', gap: 14 }}>
-                                <div style={{ flex: 1 }}>
-                                    <div style={{ fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>{a.descripcion || `Audio ${a.id}`}</div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>{a.descripcion || `Audio ${a.id}`}</div>
                                     {a.archivo && (
-                                        <audio controls style={{ marginTop: 4, height: 28, width: '100%' }}>
+                                        <audio controls style={{ height: 32, width: '100%' }}>
                                             <source src={`http://localhost:8000${a.archivo}`} />
                                         </audio>
                                     )}
                                 </div>
-                                <button onClick={() => eliminarAudio(a.id)} style={{ background: 'var(--red-bg)', border: 'none', color: 'var(--red)', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600, flexShrink: 0 }}>
-                                    Eliminar
-                                </button>
+                                <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                                    <button onClick={() => abrirEditar(a, 'audio')} style={{ height: 32, padding: '0 12px', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--surface)', color: 'var(--accent)', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}>
+                                        Editar
+                                    </button>
+                                    <button onClick={() => abrirEliminar(a.id, a.descripcion || `Audio ${a.id}`, 'audio')} style={{ height: 32, padding: '0 12px', border: '1px solid var(--red)', borderRadius: 6, background: 'var(--red-bg)', color: 'var(--red)', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}>
+                                        Eliminar
+                                    </button>
+                                </div>
                             </div>
                         ))}
                     </div>
                 </div>
+            )}
+
+            {/* ---- MODAL ELIMINAR ---- */}
+            {modalEliminar && (
+                <Modal titulo="Confirmar eliminación" onClose={() => !eliminando && setModalEliminar(null)} ancho={400}>
+                    <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 24 }}>
+                        <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--red-bg)', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--red)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="3 6 5 6 21 6" />
+                                <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
+                                <path d="M10 11v6M14 11v6" />
+                                <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p style={{ fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>
+                                ¿Eliminar "{modalEliminar.nombre}"?
+                            </p>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                Esta acción no se puede deshacer. El recurso se eliminará permanentemente.
+                            </p>
+                        </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                        <button onClick={() => setModalEliminar(null)} disabled={eliminando} style={{ height: 36, padding: '0 18px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--surface)', color: 'var(--text-muted)', cursor: 'pointer', fontWeight: 500, fontSize: '0.9rem' }}>
+                            Cancelar
+                        </button>
+                        <button onClick={confirmarEliminar} disabled={eliminando} style={{ height: 36, padding: '0 18px', border: 'none', borderRadius: 8, background: 'var(--red)', color: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem' }}>
+                            {eliminando ? 'Eliminando...' : 'Eliminar'}
+                        </button>
+                    </div>
+                </Modal>
+            )}
+
+            {/* ---- MODAL EDITAR ---- */}
+            {modalEditar && (
+                <Modal titulo={`Editar ${modalEditar.tipo === 'imagen' ? 'imagen' : 'audio'}`} onClose={() => !guardandoEdit && setModalEditar(null)} ancho={420}>
+                    <form onSubmit={confirmarEditar} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                        <div>
+                            <label style={labelStyle}>Descripción</label>
+                            <input
+                                type="text"
+                                value={editForm.descripcion}
+                                onChange={(e) => setEditForm({ ...editForm, descripcion: e.target.value })}
+                                placeholder="Descripción del recurso"
+                                style={inputStyle}
+                                autoFocus
+                            />
+                        </div>
+                        {modalEditar.tipo === 'imagen' && (
+                            <div>
+                                <label style={labelStyle}>Tipo de imagen</label>
+                                <select value={editForm.tipo} onChange={(e) => setEditForm({ ...editForm, tipo: e.target.value })} style={selectStyle}>
+                                    <option value="escenario">Fondo de escena</option>
+                                    <option value="personaje">Sprite de personaje</option>
+                                    <option value="portada">Portada de historia</option>
+                                </select>
+                            </div>
+                        )}
+                        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>
+                            <button type="button" onClick={() => setModalEditar(null)} disabled={guardandoEdit} style={{ height: 36, padding: '0 18px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--surface)', color: 'var(--text-muted)', cursor: 'pointer', fontWeight: 500, fontSize: '0.9rem' }}>
+                                Cancelar
+                            </button>
+                            <button type="submit" disabled={guardandoEdit} style={{ height: 36, padding: '0 18px', border: 'none', borderRadius: 8, background: 'var(--accent)', color: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem' }}>
+                                {guardandoEdit ? 'Guardando...' : 'Guardar cambios'}
+                            </button>
+                        </div>
+                    </form>
+                </Modal>
             )}
         </div>
     );

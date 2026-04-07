@@ -1,13 +1,15 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     readHistoria, readNodos, readOpciones,
     readNodoPersonajes, readPersonajes, readImagenes, readAudios,
     readProgresos, createProgreso, updateProgreso,
-} from '../services/api';
-import { useAuth } from '../context/AuthContext';
-import Navbar from '../components/Navbar';
-import '../styles/lector-novela.css';
+} from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
+import Navbar from '../../components/Navbar';
+import { useTypewriter } from './hooks/useTypewriter';
+import { IconVolume } from './components/IconVolume';
+import './LectorNovela.css';
 
 const resolverImagen = (img) => {
     if (!img) return null;
@@ -15,50 +17,6 @@ const resolverImagen = (img) => {
     if (img.url) return img.url.startsWith('http') ? img.url : `http://localhost:8000${img.url}`;
     return null;
 };
-
-function useTypewriter(texto, velocidad = 28) {
-    const [displayado, setDisplayado] = useState('');
-    const [listo, setListo] = useState(false);
-    const intervalRef = useRef(null);
-
-    useEffect(() => {
-        if (!texto) { setDisplayado(''); setListo(true); return; }
-        setDisplayado('');
-        setListo(false);
-        let i = 0;
-        intervalRef.current = setInterval(() => {
-            i++;
-            setDisplayado(texto.slice(0, i));
-            if (i >= texto.length) {
-                clearInterval(intervalRef.current);
-                setListo(true);
-            }
-        }, velocidad);
-        return () => clearInterval(intervalRef.current);
-    }, [texto]);
-
-    const terminar = useCallback(() => {
-        clearInterval(intervalRef.current);
-        setDisplayado(texto);
-        setListo(true);
-    }, [texto]);
-
-    return { displayado, listo, terminar };
-}
-
-function IconVolume({ muted }) {
-    return muted ? (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-            <line x1="23" y1="9" x2="17" y2="15" /><line x1="17" y1="9" x2="23" y2="15" />
-        </svg>
-    ) : (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-            <path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07" />
-        </svg>
-    );
-}
 
 export default function LectorNovela() {
     const { historiaId } = useParams();
@@ -182,15 +140,9 @@ export default function LectorNovela() {
         if (!usuario) return;
         try {
             if (progresoId) {
-                await updateProgreso(progresoId, {
-                    id_historia: Number(historiaId),
-                    id_nodo_actual: nodoId,
-                });
+                await updateProgreso(progresoId, { id_historia: Number(historiaId), id_nodo_actual: nodoId });
             } else {
-                const res = await createProgreso({
-                    id_historia: Number(historiaId),
-                    id_nodo_actual: nodoId,
-                });
+                const res = await createProgreso({ id_historia: Number(historiaId), id_nodo_actual: nodoId });
                 setProgresoId(res.data.id);
             }
         } catch (err) {
@@ -205,9 +157,7 @@ export default function LectorNovela() {
         guardarProgreso(nodoId);
     };
 
-    const handleTextClick = () => {
-        if (!listo) terminar();
-    };
+    const handleTextClick = () => { if (!listo) terminar(); };
 
     const toggleMute = () => {
         const nuevoMuted = !muted;
@@ -217,10 +167,7 @@ export default function LectorNovela() {
 
     const opciones = nodoActual ? (opcionesMap[nodoActual.id] || []) : [];
     const personajesEnNodo = nodoActual ? (npMap[nodoActual.id] || []) : [];
-
-    const imagenFondo = nodoActual?.id_imagen_escenario
-        ? imagenesMap[nodoActual.id_imagen_escenario]
-        : null;
+    const imagenFondo = nodoActual?.id_imagen_escenario ? imagenesMap[nodoActual.id_imagen_escenario] : null;
     const fondoSrc = resolverImagen(imagenFondo);
 
     const personajesPorPos = { izquierda: null, centro: null, derecha: null };
@@ -231,7 +178,6 @@ export default function LectorNovela() {
         personajesPorPos[np.posicion] = { ...p, imagenUrl: resolverImagen(img) };
     });
 
-    // --- Pantallas de estado ---
     if (cargandoInicial) {
         return (
             <div className="ln-page">
@@ -268,7 +214,6 @@ export default function LectorNovela() {
         );
     }
 
-    // --- Nombre del personaje que habla (el del centro o el primero disponible) ---
     const personajeHablando =
         personajesPorPos.centro?.nombre ||
         personajesPorPos.izquierda?.nombre ||
@@ -279,7 +224,6 @@ export default function LectorNovela() {
         <div className="ln-page">
             <Navbar />
 
-            {/* Barra superior */}
             <div className="ln-topbar">
                 <button className="ln-back-btn" onClick={() => navigate(`/historia/${historiaId}`)}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -287,22 +231,13 @@ export default function LectorNovela() {
                     </svg>
                     Salir
                 </button>
-
-                <span className="ln-scene-label">
-                    {nodoActual.titulo_nodo}
-                </span>
+                <span className="ln-scene-label">{nodoActual.titulo_nodo}</span>
             </div>
 
-            {/* Área de juego */}
             <div className="ln-game-wrap">
-                <div
-                    className="ln-stage"
-                    style={fondoSrc ? { backgroundImage: `url(${fondoSrc})` } : {}}
-                >
-                    {/* Overlay oscuro */}
+                <div className="ln-stage" style={fondoSrc ? { backgroundImage: `url(${fondoSrc})` } : {}}>
                     <div className="ln-stage-overlay" />
 
-                    {/* Placeholder fondo sin imagen */}
                     {!fondoSrc && (
                         <div className="ln-stage-placeholder">
                             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
@@ -313,68 +248,46 @@ export default function LectorNovela() {
                         </div>
                     )}
 
-                    {/* Personajes */}
                     <div className="ln-characters">
                         {['izquierda', 'centro', 'derecha'].map((pos) => {
                             const p = personajesPorPos[pos];
                             if (!p?.imagenUrl) return null;
                             return (
-                                <img
-                                    key={pos}
-                                    src={p.imagenUrl}
-                                    alt={p.nombre}
-                                    className={`ln-character ln-character-${pos}`}
-                                />
+                                <img key={pos} src={p.imagenUrl} alt={p.nombre} className={`ln-character ln-character-${pos}`} />
                             );
                         })}
                     </div>
 
-                    {/* Botón mute */}
                     <button className="ln-mute-btn" onClick={toggleMute} title={muted ? 'Activar audio' : 'Silenciar'}>
                         <IconVolume muted={muted} />
                     </button>
 
-                    {/* Panel de texto */}
                     <div className="ln-text-panel" onClick={handleTextClick}>
-                        {/* Nombre del personaje */}
-                        {personajeHablando && (
-                            <div className="ln-character-name">{personajeHablando}</div>
-                        )}
+                        {personajeHablando && <div className="ln-character-name">{personajeHablando}</div>}
 
-                        {/* Cuerpo */}
                         <div className="ln-panel-body">
-                            {/* Texto narrativo */}
                             <p className="ln-narrative" style={{ cursor: listo ? 'default' : 'pointer' }}>
                                 "{displayado}"
                                 {!listo && <span className="ln-cursor">|</span>}
                             </p>
 
-                            {/* Opciones */}
                             {listo && opciones.length > 0 && (
                                 <div className="ln-options">
                                     {opciones.map((op, idx) => (
-                                        <button
-                                            key={op.id}
-                                            className="ln-option-btn"
-                                            onClick={() => irANodo(op.id_nodo_destino)}
-                                        >
+                                        <button key={op.id} className="ln-option-btn" onClick={() => irANodo(op.id_nodo_destino)}>
                                             {String.fromCharCode(65 + idx)}. {op.texto_opcion}
                                         </button>
                                     ))}
                                 </div>
                             )}
 
-                            {/* Nodo final */}
                             {listo && nodoActual.es_final && opciones.length === 0 && (
                                 <div className="ln-final">
                                     <span className="ln-final-label">— FIN —</span>
-                                    <button className="ln-final-btn" onClick={() => navigate('/')}>
-                                        Volver al catálogo
-                                    </button>
+                                    <button className="ln-final-btn" onClick={() => navigate('/')}>Volver al catálogo</button>
                                 </div>
                             )}
 
-                            {/* Sin continuación */}
                             {listo && !nodoActual.es_final && opciones.length === 0 && (
                                 <p className="ln-no-continue">Sin continuación configurada.</p>
                             )}

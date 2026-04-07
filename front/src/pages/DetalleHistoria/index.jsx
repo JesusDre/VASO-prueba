@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { readHistoria, readProgresos, deleteProgreso } from '../services/api';
-import Navbar from '../components/Navbar';
-import { useAuth } from '../context/AuthContext';
-import '../styles/detalle-historia.css';
+import { readHistoria, readProgresos, deleteProgreso } from '../../services/api';
+import Navbar from '../../components/Navbar';
+import { useAuth } from '../../context/AuthContext';
+import './DetalleHistoria.css';
 
 export default function DetalleHistoria() {
     const { id } = useParams();
@@ -22,7 +22,6 @@ export default function DetalleHistoria() {
                 const hist = resHistoria.data;
                 setHistoria(hist);
 
-                // nombre_creador viene directo del serializer
                 if (hist.nombre_creador) setAutor(hist.nombre_creador);
 
                 if (usuario) {
@@ -81,7 +80,6 @@ export default function DetalleHistoria() {
         <div className="dh-page">
             <Navbar />
 
-            {/* Volver */}
             <div className="dh-back-bar">
                 <button className="dh-back-btn" onClick={() => navigate('/')}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -91,38 +89,30 @@ export default function DetalleHistoria() {
                 </button>
             </div>
 
-            {/* Hero card */}
             <div className="dh-hero-wrap">
                 <div
                     className="dh-hero-card"
                     style={portadaSrc ? { backgroundImage: `url(${portadaSrc})` } : {}}
                 >
-                    {/* Overlay oscuro solo si hay imagen */}
                     {portadaSrc && <div className="dh-hero-overlay" />}
 
                     <div className={`dh-hero-content ${portadaSrc ? 'has-image' : 'no-image'}`}>
-                        {/* Badge */}
                         <div className="dh-badge">Misterio • Novela Visual</div>
 
-                        {/* Título */}
                         <h1 className="dh-title">{historia.titulo}</h1>
 
-                        {/* Autor */}
                         {autor && (
                             <p className="dh-author">por {autor}</p>
                         )}
 
-                        {/* Separador */}
                         <div className="dh-divider" />
 
-                        {/* Descripción */}
                         {historia.descripcion && (
                             <p className="dh-description">
                                 "{historia.descripcion}"
                             </p>
                         )}
 
-                        {/* Botón */}
                         <div className="dh-actions">
                             <button className="dh-btn-comenzar" onClick={handleComenzar}>
                                 {progreso ? 'Continuar Aventura' : 'Comenzar Aventura'}
