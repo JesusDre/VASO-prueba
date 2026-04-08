@@ -14,6 +14,7 @@ import LectorNovela from './pages/LectorNovela';
 // Creador
 import DashboardCreador from './pages/creador/DashboardCreador';
 import EditorHistoria from './pages/creador/EditorHistoria';
+import Biblioteca from './pages/creador/Biblioteca';
 
 // Admin
 import AdminPanel from './pages/admin/AdminPanel';
@@ -55,6 +56,11 @@ function App() {
                     <Route path="/creador/historia/:id" element={
                         <ProtectedRoute rolesPermitidos={['creador', 'admin']}>
                             <EditorHistoria />
+                        </ProtectedRoute>
+                    } />
+                    <Route path="/creador/biblioteca" element={
+                        <ProtectedRoute rolesPermitidos={['creador', 'admin']}>
+                            <Biblioteca />
                         </ProtectedRoute>
                     } />
 

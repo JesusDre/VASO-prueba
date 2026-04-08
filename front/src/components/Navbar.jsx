@@ -125,7 +125,7 @@ export default function Navbar() {
                                             <IconPlus />
                                             Nuevo Proyecto
                                         </Link>
-                                        <Link className="nv-dropdown-item" to="/">
+                                        <Link className="nv-dropdown-item" to="/creador/biblioteca">
                                             <IconBook />
                                             Biblioteca
                                         </Link>

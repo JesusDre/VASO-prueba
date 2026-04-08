@@ -22,6 +22,8 @@ export default function TabRecursos() {
     const [audDesc, setAudDesc] = useState('');
     const [seccion, setSeccion] = useState('imagenes');
 
+    const [filtroTipo, setFiltroTipo] = useState('todos');
+
     const [modalEliminar, setModalEliminar] = useState(null);
     const [eliminando, setEliminando] = useState(false);
     const [modalEditar, setModalEditar] = useState(null);
@@ -144,35 +146,74 @@ export default function TabRecursos() {
                         </form>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                        {imagenes.length === 0 && <p style={{ color: 'var(--text-muted)', textAlign: 'center', paddingTop: 40, fontSize: '0.9rem' }}>Sin imágenes. Sube la primera.</p>}
-                        {imagenes.map((img) => {
-                            const src = img.imagen_base64_display
-                                ? `data:image/png;base64,${img.imagen_base64_display}`
-                                : img.url ? `http://localhost:8000${img.url}` : null;
+                    <div>
+                        {/* Sub-tabs de categoría */}
+                        {(() => {
+                            const FILTROS = [
+                                { key: 'todos',     label: 'Todas',    color: null },
+                                { key: 'portada',   label: 'Portadas', color: tipoBadgeColor.portada },
+                                { key: 'personaje', label: 'Sprites',  color: tipoBadgeColor.personaje },
+                                { key: 'escenario', label: 'Fondos',   color: tipoBadgeColor.escenario },
+                            ];
+                            const imgsFiltradas = filtroTipo === 'todos' ? imagenes : imagenes.filter(i => i.tipo === filtroTipo);
                             return (
-                                <div key={img.id} style={{ ...cardStyle, display: 'flex', alignItems: 'center', gap: 14 }}>
-                                    <div style={{ width: 60, height: 60, borderRadius: 7, overflow: 'hidden', flexShrink: 0, background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
-                                        {src
-                                            ? <img src={src} alt={img.descripcion} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                            : <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', color: 'var(--text-muted)', fontSize: '0.65rem' }}>IMG</div>
-                                        }
+                                <>
+                                    <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
+                                        {FILTROS.map(({ key, label, color }) => {
+                                            const activo = filtroTipo === key;
+                                            const count = key === 'todos' ? imagenes.length : imagenes.filter(i => i.tipo === key).length;
+                                            return (
+                                                <button key={key} onClick={() => setFiltroTipo(key)} style={{
+                                                    height: 30, padding: '0 14px', borderRadius: 20, cursor: 'pointer',
+                                                    border: `1px solid ${activo ? (color || 'var(--accent)') : 'var(--border)'}`,
+                                                    background: activo ? (color ? `${color}18` : 'var(--accent-light)') : 'var(--surface)',
+                                                    color: activo ? (color || 'var(--accent)') : 'var(--text-muted)',
+                                                    fontWeight: activo ? 700 : 500, fontSize: '0.82rem',
+                                                    transition: 'all 0.15s',
+                                                }}>
+                                                    {label} <span style={{ opacity: 0.7 }}>({count})</span>
+                                                </button>
+                                            );
+                                        })}
                                     </div>
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ fontWeight: 600, color: 'var(--text)', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                            {img.descripcion || `Imagen ${img.id}`}
-                                        </div>
-                                        <span style={{ background: tipoBadgeBg[img.tipo] || '#f1f5f9', color: tipoBadgeColor[img.tipo] || 'var(--text-muted)', fontSize: '0.7rem', padding: '2px 8px', borderRadius: 20, fontWeight: 700 }}>
-                                            {tipoLabel[img.tipo] || img.tipo}
-                                        </span>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                        {imgsFiltradas.length === 0 && (
+                                            <p style={{ color: 'var(--text-muted)', textAlign: 'center', paddingTop: 40, fontSize: '0.9rem' }}>
+                                                {imagenes.length === 0 ? 'Sin imágenes. Sube la primera.' : 'Sin imágenes en esta categoría.'}
+                                            </p>
+                                        )}
+                                        {imgsFiltradas.map((img) => {
+                                            const src = img.imagen_base64_display
+                                                ? `data:image/png;base64,${img.imagen_base64_display}`
+                                                : img.url ? `http://localhost:8000${img.url}` : null;
+                                            return (
+                                                <div key={img.id} style={{ ...cardStyle, display: 'flex', alignItems: 'center', gap: 14 }}>
+                                                    <div style={{ width: 60, height: 60, borderRadius: 7, overflow: 'hidden', flexShrink: 0, background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+                                                        {src
+                                                            ? <img src={src} alt={img.descripcion} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                            : <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', color: 'var(--text-muted)', fontSize: '0.65rem' }}>IMG</div>
+                                                        }
+                                                    </div>
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                        <div style={{ fontWeight: 600, color: 'var(--text)', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                            {img.descripcion || `Imagen ${img.id}`}
+                                                        </div>
+                                                        <span style={{ background: tipoBadgeBg[img.tipo] || '#f1f5f9', color: tipoBadgeColor[img.tipo] || 'var(--text-muted)', fontSize: '0.7rem', padding: '2px 8px', borderRadius: 20, fontWeight: 700 }}>
+                                                            {tipoLabel[img.tipo] || img.tipo}
+                                                        </span>
+                                                    </div>
+                                                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                                                        <button onClick={() => abrirEditar(img, 'imagen')} style={{ height: 32, padding: '0 12px', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--surface)', color: 'var(--accent)', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}>Editar</button>
+                                                        <button onClick={() => abrirEliminar(img.id, img.descripcion || `Imagen ${img.id}`, 'imagen')} style={{ height: 32, padding: '0 12px', border: '1px solid var(--red)', borderRadius: 6, background: 'var(--red-bg)', color: 'var(--red)', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}>Eliminar</button>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
-                                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                                        <button onClick={() => abrirEditar(img, 'imagen')} style={{ height: 32, padding: '0 12px', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--surface)', color: 'var(--accent)', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}>Editar</button>
-                                        <button onClick={() => abrirEliminar(img.id, img.descripcion || `Imagen ${img.id}`, 'imagen')} style={{ height: 32, padding: '0 12px', border: '1px solid var(--red)', borderRadius: 6, background: 'var(--red-bg)', color: 'var(--red)', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}>Eliminar</button>
-                                    </div>
-                                </div>
+                                </>
                             );
-                        })}
+                        })()}
                     </div>
                 </div>
             )}

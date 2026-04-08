@@ -82,13 +82,55 @@ export default function TabInfo({ historia, historiaId, usuario, onGuardado }) {
                 await updateHistoria(historiaId, payload);
                 toast.success('Historia guardada');
             } else {
-                const res = await createHistoria(payload);
+                const res = await createHistoria({ ...payload, publicada: false });
                 toast.success('Historia creada');
                 onGuardado(res.data.id);
             }
         } catch (err) {
             if (err.response?.data) setErrores(err.response.data);
             toast.error('Error al guardar');
+        } finally {
+            setGuardando(false);
+        }
+    };
+
+    const handlePublicar = async () => {
+        setGuardando(true);
+        try {
+            const payload = {
+                titulo: form.titulo,
+                descripcion: form.descripcion,
+                publicada: true,
+                id_creador: usuario.id,
+                id_nodo_inicio: form.id_nodo_inicio || null,
+                id_portada: form.id_portada || null,
+            };
+            await updateHistoria(historiaId, payload);
+            setForm((prev) => ({ ...prev, publicada: true }));
+            toast.success('Historia publicada');
+        } catch {
+            toast.error('Error al publicar');
+        } finally {
+            setGuardando(false);
+        }
+    };
+
+    const handleDespublicar = async () => {
+        setGuardando(true);
+        try {
+            const payload = {
+                titulo: form.titulo,
+                descripcion: form.descripcion,
+                publicada: false,
+                id_creador: usuario.id,
+                id_nodo_inicio: form.id_nodo_inicio || null,
+                id_portada: form.id_portada || null,
+            };
+            await updateHistoria(historiaId, payload);
+            setForm((prev) => ({ ...prev, publicada: false }));
+            toast.success('Historia movida a borrador');
+        } catch {
+            toast.error('Error al despublicar');
         } finally {
             setGuardando(false);
         }
@@ -198,12 +240,30 @@ export default function TabInfo({ historia, historiaId, usuario, onGuardado }) {
                         </div>
                         <div style={{ flex: 1 }}>
                             <label style={labelStyle}>Estado</label>
-                            <select value={form.publicada ? 'publicado' : 'borrador'}
-                                onChange={(e) => setForm({ ...form, publicada: e.target.value === 'publicado' })}
-                                disabled={guardando} style={selectStyle}>
-                                <option value="borrador">Borrador</option>
-                                <option value="publicado">Publicado</option>
-                            </select>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, height: 42 }}>
+                                <span style={{
+                                    display: 'inline-flex', alignItems: 'center', height: 28,
+                                    padding: '0 12px', borderRadius: 20, fontSize: '0.8rem', fontWeight: 700,
+                                    background: form.publicada ? 'var(--green-bg)' : '#fef9c3',
+                                    color: form.publicada ? 'var(--green)' : '#92400e',
+                                    border: `1px solid ${form.publicada ? 'var(--green)' : '#fde68a'}`,
+                                }}>
+                                    {form.publicada ? 'Publicado' : 'Borrador'}
+                                </span>
+                                {historiaId && (
+                                    form.publicada ? (
+                                        <button type="button" onClick={handleDespublicar} disabled={guardando}
+                                            style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text-muted)', borderRadius: 8, padding: '4px 12px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 500 }}>
+                                            Despublicar
+                                        </button>
+                                    ) : (
+                                        <button type="button" onClick={handlePublicar} disabled={guardando}
+                                            style={{ background: 'var(--green)', border: 'none', color: '#fff', borderRadius: 8, padding: '4px 12px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
+                                            Publicar
+                                        </button>
+                                    )
+                                )}
+                            </div>
                         </div>
                     </div>
 
@@ -226,9 +286,13 @@ export default function TabInfo({ historia, historiaId, usuario, onGuardado }) {
                         </div>
                     )}
 
-                    {!form.publicada && (
-                        <div style={{ background: '#fef9c3', border: '1px solid #fde68a', borderRadius: 8, padding: '10px 14px' }}>
-                            <p style={{ color: '#92400e', fontSize: '0.84rem' }}>Tu historia está en modo borrador. Solo tú puedes verla.</p>
+                    {!form.publicada && historiaId && (
+                        <div style={{ background: '#fef9c3', border: '1px solid #fde68a', borderRadius: 8, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                            <p style={{ color: '#92400e', fontSize: '0.84rem', margin: 0 }}>Tu historia está en modo borrador. Solo tú puedes verla.</p>
+                            <button type="button" onClick={handlePublicar} disabled={guardando}
+                                style={{ background: 'var(--green)', border: 'none', color: '#fff', borderRadius: 8, padding: '5px 14px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                                Publicar ahora
+                            </button>
                         </div>
                     )}
 
