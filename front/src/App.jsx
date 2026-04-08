@@ -1,102 +1,15 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import ProtectedRoute from './components/ProtectedRoute';
-
-// Auth
-import Login from './pages/auth/Login';
-import Register from './pages/auth/Register';
-
-// Publico / Lector
-import Home from './pages/public/Home';
-import DetalleHistoria from './pages/public/DetalleHistoria';
-import LectorNovela from './pages/public/LectorNovela';
-
-// Creador
-import DashboardCreador from './pages/creador/DashboardCreador';
-import EditorHistoria from './pages/creador/EditorHistoria';
-import Biblioteca from './pages/creador/Biblioteca';
-
-// Admin
-import AdminPanel from './pages/admin/AdminPanel';
-
-// Legacy CRUDs (admin)
-import HistoriasApp from './pages/admin/legacy/HistoriasApp';
-import NodosApp from './pages/admin/legacy/NodosApp';
-import PersonajesApp from './pages/admin/legacy/PersonajesApp';
-import RecursosApp from './pages/admin/legacy/RecursosApp';
-import UsuariosApp from './pages/admin/legacy/UsuariosApp';
+import routes from './router/routes.jsx';
 
 function App() {
     return (
         <AuthProvider>
             <BrowserRouter>
                 <Routes>
-                    {/* Publicas */}
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/registro" element={<Register />} />
-
-                    {/* Publicas — cualquiera puede explorar */}
-                    <Route path="/" element={<Home />} />
-                    <Route path="/historia/:id" element={<DetalleHistoria />} />
-
-                    {/* Lector publico — progreso solo se guarda si hay sesion */}
-                    <Route path="/leer/:historiaId" element={<LectorNovela />} />
-
-                    {/* Solo creador (y admin) */}
-                    <Route path="/creador" element={
-                        <ProtectedRoute rolesPermitidos={['creador', 'admin']}>
-                            <DashboardCreador />
-                        </ProtectedRoute>
-                    } />
-                    <Route path="/creador/nueva" element={
-                        <ProtectedRoute rolesPermitidos={['creador', 'admin']}>
-                            <EditorHistoria />
-                        </ProtectedRoute>
-                    } />
-                    <Route path="/creador/historia/:id" element={
-                        <ProtectedRoute rolesPermitidos={['creador', 'admin']}>
-                            <EditorHistoria />
-                        </ProtectedRoute>
-                    } />
-                    <Route path="/creador/biblioteca" element={
-                        <ProtectedRoute rolesPermitidos={['creador', 'admin']}>
-                            <Biblioteca />
-                        </ProtectedRoute>
-                    } />
-
-                    {/* Solo admin */}
-                    <Route path="/admin" element={
-                        <ProtectedRoute rolesPermitidos={['admin']}>
-                            <AdminPanel />
-                        </ProtectedRoute>
-                    } />
-                    <Route path="/historias" element={
-                        <ProtectedRoute rolesPermitidos={['admin']}>
-                            <HistoriasApp />
-                        </ProtectedRoute>
-                    } />
-                    <Route path="/nodos" element={
-                        <ProtectedRoute rolesPermitidos={['admin']}>
-                            <NodosApp />
-                        </ProtectedRoute>
-                    } />
-                    <Route path="/personajes" element={
-                        <ProtectedRoute rolesPermitidos={['admin']}>
-                            <PersonajesApp />
-                        </ProtectedRoute>
-                    } />
-                    <Route path="/recursos" element={
-                        <ProtectedRoute rolesPermitidos={['admin']}>
-                            <RecursosApp />
-                        </ProtectedRoute>
-                    } />
-                    <Route path="/usuarios" element={
-                        <ProtectedRoute rolesPermitidos={['admin']}>
-                            <UsuariosApp />
-                        </ProtectedRoute>
-                    } />
-
-                    <Route path="*" element={<Navigate to="/" replace />} />
+                    {routes.map(({ path, element }) => (
+                        <Route key={path} path={path} element={element} />
+                    ))}
                 </Routes>
             </BrowserRouter>
         </AuthProvider>
