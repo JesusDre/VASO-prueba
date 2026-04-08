@@ -6,7 +6,7 @@ import {
 } from '../../../../services/api';
 import { inputStyle, labelStyle, selectStyle, btnPrimary } from '../styles/editorStyles';
 
-export function TabInfo({ historia, historiaId, usuario, onGuardado }) {
+export default function TabInfo({ historia, historiaId, usuario, onGuardado }) {
     const FORM_INICIAL = { titulo: '', descripcion: '', publicada: false, id_nodo_inicio: '', id_portada: '' };
     const [form, setForm] = useState(historia
         ? {

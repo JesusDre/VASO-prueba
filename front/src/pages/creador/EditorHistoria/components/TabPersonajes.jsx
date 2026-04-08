@@ -7,7 +7,7 @@ import {
 } from '../../../../services/api';
 import { inputStyle, labelStyle, selectStyle, btnPrimary, btnGhost, cardStyle } from '../styles/editorStyles';
 
-export function TabPersonajes({ historiaId }) {
+export default function TabPersonajes({ historiaId }) {
     const FORM_P = { nombre: '', id_imagen: '' };
     const [personajes, setPersonajes] = useState([]);
     const [imagenes, setImagenes] = useState([]);

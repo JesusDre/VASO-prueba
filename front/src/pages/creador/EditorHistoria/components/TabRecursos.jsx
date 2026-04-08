@@ -5,13 +5,13 @@ import {
     readAudios, createAudio, updateAudio, deleteAudio,
 } from '../../../../services/api';
 import { inputStyle, labelStyle, selectStyle, btnPrimary, cardStyle } from '../styles/editorStyles';
-import { Modal } from './Modal';
+import Modal from './Modal';
 
 const tipoLabel = { escenario: 'Fondo', personaje: 'Personaje', portada: 'Portada' };
 const tipoBadgeBg = { escenario: '#dbeafe', personaje: '#ede9fe', portada: '#fee2e2' };
 const tipoBadgeColor = { escenario: '#1d4ed8', personaje: '#6d28d9', portada: '#dc2626' };
 
-export function TabRecursos() {
+export default function TabRecursos() {
     const [imagenes, setImagenes] = useState([]);
     const [audios, setAudios] = useState([]);
     const [subiendo, setSubiendo] = useState(false);

@@ -105,9 +105,27 @@
     border-radius: 10px;
     background: var(--surface-2);
     color: var(--text);
-    padding: 0 14px 0 40px;
+    padding: 0 44px 0 40px;
     font-size: 0.9rem;
     transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
+}
+
+.login-eye-btn {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #a0aec0;
+    display: flex;
+    align-items: center;
+    padding: 0;
+    line-height: 1;
+}
+.login-eye-btn:hover {
+    color: var(--text);
 }
 
 .login-input-wrap input:focus {
