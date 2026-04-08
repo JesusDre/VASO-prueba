@@ -16,3 +16,4 @@ class ProgresoUsuarioSerializer(serializers.ModelSerializer):
             'id_nodo_actual',
             'fecha_actualizacion',
         ]
+        read_only_fields = ['id_usuario']

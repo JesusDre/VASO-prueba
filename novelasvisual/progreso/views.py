@@ -15,3 +15,11 @@ class ProgresoUsuarioViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         # Filtramos para que cada usuario solo vea su propio progreso
         return ProgresoUsuario.objects.filter(id_usuario=self.request.user)
+
+    def perform_create(self, serializer):
+        # Siempre asigna el usuario autenticado como dueno del progreso
+        serializer.save(id_usuario=self.request.user)
+
+    def perform_update(self, serializer):
+        # Al actualizar, conserva el usuario autenticado como dueno
+        serializer.save(id_usuario=self.request.user)

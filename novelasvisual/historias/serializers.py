@@ -12,6 +12,8 @@ class HistoriaSerializer(serializers.ModelSerializer):
     portada_url = serializers.SerializerMethodField()
     # Imagen de portada en base64 (si se guardo como binario)
     portada_base64 = serializers.SerializerMethodField()
+    # Nombre completo del creador (calculado, solo lectura)
+    nombre_creador = serializers.SerializerMethodField()
 
     class Meta:
         model = Historia
@@ -22,11 +24,17 @@ class HistoriaSerializer(serializers.ModelSerializer):
             'fecha_creacion',
             'publicada',
             'id_creador',
+            'nombre_creador',
             'id_nodo_inicio',
             'id_portada',
             'portada_url',
             'portada_base64',
         ]
+
+    def get_nombre_creador(self, obj):
+        if obj.id_creador:
+            return f"{obj.id_creador.nombre} {obj.id_creador.apellido_paterno}"
+        return ''
 
     def get_portada_url(self, obj):
         if obj.id_portada and obj.id_portada.url:

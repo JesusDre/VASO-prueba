@@ -3,13 +3,13 @@ import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Auth
-import Login from './login';
-import Register from './register';
+import Login from './pages/auth/Login';
+import Register from './pages/auth/Register';
 
 // Publico / Lector
-import Home from './pages/Home';
-import DetalleHistoria from './pages/DetalleHistoria';
-import LectorNovela from './pages/LectorNovela';
+import Home from './pages/public/Home';
+import DetalleHistoria from './pages/public/DetalleHistoria';
+import LectorNovela from './pages/public/LectorNovela';
 
 // Creador
 import DashboardCreador from './pages/creador/DashboardCreador';
@@ -19,12 +19,12 @@ import Biblioteca from './pages/creador/Biblioteca';
 // Admin
 import AdminPanel from './pages/admin/AdminPanel';
 
-// CRUDs de soporte (admin)
-import HistoriasApp from './HistoriasApp';
-import NodosApp from './NodosApp';
-import PersonajesApp from './PersonajesApp';
-import RecursosApp from './RecursosApp';
-import UsuariosApp from './UsuariosApp';
+// Legacy CRUDs (admin)
+import HistoriasApp from './pages/admin/legacy/HistoriasApp';
+import NodosApp from './pages/admin/legacy/NodosApp';
+import PersonajesApp from './pages/admin/legacy/PersonajesApp';
+import RecursosApp from './pages/admin/legacy/RecursosApp';
+import UsuariosApp from './pages/admin/legacy/UsuariosApp';
 
 function App() {
     return (
